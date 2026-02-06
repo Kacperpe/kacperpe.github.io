@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Message</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: "Bradley Hand", cursive;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            gap: 20px;
+        }
+
+        /* two-column flow for the love messages */
+        .two-columns {
+            column-count: 2;
+            column-gap: 40px;
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        /* keep each message as an unbroken block inside columns */
+        .two-columns .love-text {
+            display: block;
+            break-inside: avoid;
+            -webkit-column-break-inside: avoid;
+            page-break-inside: avoid;
+            width: 100%;
+            margin: 0 0 16px 0;
+        }
+
+        @media (max-width: 700px) {
+            .two-columns { column-count: 1; }
+            .love-text { font-size: clamp(20px, 6vw, 60px); }
+        }
+
+        /* hint text below the two-column block, centered */
+        .hint {
+            text-align: center;
+            margin-top: 18px;
+            font-size: clamp(16px, 3vw, 28px);
+            font-weight: 700;
+            color: #333;
+        }
+
+        .love-text {
+            /* fluid/ responsive text size for the repeated love messages */
+            font-size: clamp(24px, 8vw + 0.25rem, 80px);
+            font-weight: bold;
+            text-align: center;
+            /* no animation: keep color stable */
+            color: #FF0000;
+        }
+
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            /* responsive back arrow */
+            font-size: clamp(18px, 4.5vw, 40px);
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+    </style>
+    </head>
+<body class="bg-gradient">
+    <div class="container">
+        <div class="two-columns">
+            <div class="love-text">LOVE YOU</div>
+            <div class="love-text">KOCHAM CIÄ</div>
+            <div class="love-text">TE AMO</div>
+            <div class="love-text">JE T'AIME</div>
+            <div class="love-text">ICH LIEBE DICH</div>
+            <div class="love-text">TI AMO</div>
+            <div class="love-text">ć‘ç±ä˝ </div>
+            <div class="love-text" onclick="window.location.href='zdjecia.html'" style="cursor: pointer;">ě‚¬ëž‘í•´</div>
+        </div>
+        <div class="hint">Kacper, hint twĂłj jÄ™zyk ktĂłrego siÄ™ uczysz</div>
+    </div>
+    <a href="list_z_piosenkÄ….html" class="back-button">â¬…ď¸Ź</a>
+</body>
+</html>

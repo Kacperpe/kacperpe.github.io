@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Timetable Nasze daty</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Background variants (paste into your existing CSS) */
+        :root { --scroll-duration: 300s; }
+
+        html, body { height:100%; margin:0; font-family: "Bradley Hand", cursive; }
+        .container { max-width:1000px; margin:24px auto; padding:16px; box-sizing:border-box; }
+        h1 { text-align:center; margin:6px 0 12px 0; }
+        form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin-bottom:12px; }
+        form input[type="date"], form input[type="text"], form textarea { font-family:inherit; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.12); }
+        form textarea { min-width:240px; min-height:56px; resize:vertical; }
+        .controls { display:flex; gap:8px; }
+        button { padding:8px 12px; border-radius:8px; border:none; background:#ff69b4; color:#fff; cursor:pointer; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        th, td { padding:8px; border-bottom:1px solid rgba(0,0,0,0.06); text-align:left; vertical-align:top; }
+        th { background: rgba(0,0,0,0.02); }
+        .actions button { margin-right:6px; background:#333; }
+        .small { padding:6px 8px; font-size:0.9rem; }
+        .back-button { position:fixed; bottom:20px; left:20px; font-size:clamp(18px,4.5vw,40px); text-decoration:none; }
+
+        /* navigation-menu (right-bottom) â€” minimal styles */
+        .navigation-menu {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            font-family: inherit;
+        }
+        .menu-button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .menu-button:hover { transform: scale(1.06); }
+        .menu-content {
+            display: none;
+            position: absolute;
+            bottom: 60px;
+            right: 0;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            padding: 10px;
+            width: 150px;
+        }
+        .menu-content.active { display: block; }
+        .menu-content a {
+            display: block;
+            padding: 8px 10px;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .menu-content a:hover { background-color: #ffecf2; }
+
+        /* small calendar link near header */
+        .calendar-link {
+            display: inline-block;
+            margin: 8px 0 16px 0;
+            padding: 8px 12px;
+            background: #a8e063;
+            color: #072;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        @media (max-width:700px) { form { flex-direction:column; } table { font-size:14px; } }
+    </style>
+</head>
+<body class="bg-image">
+    <div class="container">
+    <h1>Timetable nasze daty i miejsca</h1>
+    <a href="calendar.html" class="calendar-link" aria-label="OtwĂłrz kalendarz">PokaĹĽ kalendarz</a>
+
+        
+        <form id="eventForm">
+            <input id="date" type="date" required />
+            <input id="title" type="text" placeholder="Co robiliĹ›my (tytuĹ‚)" required />
+            <input id="location" type="text" placeholder="Gdzie byliĹ›my" />
+            <textarea id="notes" placeholder="Notatki (opcjonalnie)"></textarea>
+            <div class="controls">
+                <button id="addBtn" type="submit">Dodaj</button>
+                <button id="clearBtn" type="button" class="small">WyczyĹ›Ä‡ wszystkie</button>
+            </div>
+        </form>
+
+        <div>
+            <table id="eventsTable" aria-live="polite">
+                <thead>
+                    <tr><th>Data</th><th>Co</th><th>Gdzie</th><th>Notatki</th><th>Akcje</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- navigation menu (right bottom) -->
+    <div class="navigation-menu">
+        <button class="menu-button" aria-haspopup="true" aria-expanded="false" aria-label="OtwĂłrz menu">đź“‘</button>
+        <div class="menu-content" role="menu" aria-hidden="true">
+            <a href="index.html" role="menuitem">Home</a>
+            <a href="list_z_piosenkÄ….html" role="menuitem">List</a>
+            <a href="nextpage.html" role="menuitem">Love you</a>
+            <a href="zdjecia.html" role="menuitem">ZdjÄ™cia</a>
+            <a href="timetable.html" role="menuitem">Timetable</a>
+        </div>
+    </div>
+
+    <a href="zdjecia.html" class="back-button">â¬…ď¸Ź</a>
+
+    <script>
+        const STORAGE_KEY = 'timetableEvents_v1';
+
+        function loadEvents(){
+            try{
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            }catch(e){ return []; }
+        }
+
+        function saveEvents(list){
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        }
+
+        function render(){
+            const tbody = document.querySelector('#eventsTable tbody');
+            const events = loadEvents().slice().sort((a,b)=> (a.date> b.date)?1: (a.date< b.date)?-1:0);
+            tbody.innerHTML = '';
+            if(events.length===0){
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="5" style="text-align:center;opacity:.6">Brak wydarzeĹ„ â€” dodaj nowe powyĹĽej</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+            for(const ev of events){
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ev.date}</td>
+                    <td>${escapeHtml(ev.title)}</td>
+                    <td>${escapeHtml(ev.location||'')}</td>
+                    <td>${escapeHtml(ev.notes||'')}</td>
+                    <td class="actions">
+                        <button class="small" data-id="${ev.id}" data-action="edit">Edytuj</button>
+                        <button class="small" data-id="${ev.id}" data-action="delete">UsuĹ„</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function escapeHtml(s){
+            if(!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function addEvent(ev){
+            ev.preventDefault();
+            const date = document.getElementById('date').value;
+            const title = document.getElementById('title').value.trim();
+            const location = document.getElementById('location').value.trim();
+            const notes = document.getElementById('notes').value.trim();
+            if(!date || !title) return alert('Wybierz datÄ™ i podaj tytuĹ‚.');
+            const list = loadEvents();
+            list.push({ id: Date.now().toString(), date, title, location, notes });
+            saveEvents(list);
+            document.getElementById('eventForm').reset();
+            render();
+        }
+
+        function handleTableClick(e){
+            const btn = e.target.closest('button');
+            if(!btn) return;
+            const id = btn.dataset.id;
+            const action = btn.dataset.action;
+            if(action==='delete'){
+                if(!confirm('UsunÄ…Ä‡ to wydarzenie?')) return;
+                const list = loadEvents().filter(x=> x.id !== id);
+                saveEvents(list);
+                render();
+            }else if(action==='edit'){
+                const list = loadEvents();
+                const item = list.find(x=> x.id===id);
+                if(!item) return alert('Element nie znaleziony');
+                // populate form for edit: remove old and let user add new (simple UX)
+                if(!confirm('WypeĹ‚niÄ‡ formularz danymi do edycji? Potem naciĹ›nij Dodaj, by zapisaÄ‡ (stworzy nowe wpisy).')) return;
+                document.getElementById('date').value = item.date;
+                document.getElementById('title').value = item.title;
+                document.getElementById('location').value = item.location || '';
+                document.getElementById('notes').value = item.notes || '';
+                // remove the old entry so adding will replace it
+                const newList = list.filter(x=> x.id !== id);
+                saveEvents(newList);
+                render();
+            }
+        }
+
+        function clearAll(){
+            if(!confirm('UsunÄ…Ä‡ WSZYSTKIE wydarzenia?')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            render();
+        }
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+            render();
+            document.getElementById('eventForm').addEventListener('submit', addEvent);
+            document.getElementById('eventsTable').addEventListener('click', handleTableClick);
+            document.getElementById('clearBtn').addEventListener('click', clearAll);
+        });
+
+        // attach menu handlers (safe idempotent)
+        (function(){
+            document.addEventListener('DOMContentLoaded', () => {
+                const menuBtn = document.querySelector('.navigation-menu .menu-button');
+                const menuContent = document.querySelector('.navigation-menu .menu-content');
+                if (!menuBtn || !menuContent) return;
+
+                function closeMenu() {
+                    menuContent.classList.remove('active');
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                    menuContent.setAttribute('aria-hidden', 'true');
+                }
+                function openMenu() {
+                    menuContent.classList.add('active');
+                    menuBtn.setAttribute('aria-expanded', 'true');
+                    menuContent.setAttribute('aria-hidden', 'false');
+                }
+
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (menuContent.classList.contains('active')) closeMenu(); else openMenu();
+                });
+
+                // close when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.navigation-menu')) closeMenu();
+                });
+
+                // keyboard: Esc to close
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closeMenu();
+                });
+            });
+        })();
+    </script>
+
+    
+</body>
+</html>

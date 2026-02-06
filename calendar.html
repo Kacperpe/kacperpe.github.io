@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kalendarz â€” nasze daty</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* small calendar overrides / widget */
+          /* make the calendar container a fixed width so the grid doesn't change with month-name length
+              width set to 1/2 of previous value (760px -> calc(760px / 2)) to increase size */
+    /* allow wider space for three months side-by-side but cap to a reasonable max */
+    /* reduce vertical size: smaller top/bottom margin and padding, lower max-height and allow scroll if needed */
+    .calendar-wrap { width: 100%; max-width: 1120px; margin: 12px auto 8px; padding: 8px 14px 6px; background: rgba(0,0,0,0.22); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); max-height: 300px; overflow:auto; }
+        /* header: nav has fixed width, title grows in middle but won't push container size */
+        /* center the header contents and keep title from stretching so nav sits next to it */
+        .cal-header { display:flex; align-items:center; justify-content:center; gap:4px; margin-bottom:8px; position:relative; }
+    .cal-nav { width: calc(140px / 2); display:flex; gap:6px; margin-left:6px; }
+        /* smaller month title so it doesn't dominate the narrow layout; prevent it from flexing */
+        .cal-title { flex:0 0 auto; max-width: 60%; text-align:center; font-size: clamp(12px, 2.4vw, 14px); color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+    /* make nav buttons more compact */
+    .cal-nav button { padding:4px 6px; font-size:12px; border-radius:6px; border:none; background:#ff69b4; color:#fff; cursor:pointer; }
+
+    /* layout for multiple months side-by-side */
+    .multi-cal { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+    .cal-grid-weekdays { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; margin-bottom:6px; }
+    .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+    .month-block { display:flex; flex-direction:column; align-items:stretch; }
+    /* visual wrapper for each month so they stand out as separate panels */
+    .month-block { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding:10px; border-radius:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .mini-title { text-align:center; color:#fff; font-size:12px; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-bottom:4px; border-bottom: 1px dashed rgba(255,255,255,0.04); }
+    .month-block .cal-grid-weekdays { margin-top:8px; margin-bottom:6px; }
+        .cal-weekday { text-align:center; font-weight:700; color: rgba(255,255,255,0.85); padding:6px 4px; }
+          /* make each day a square using aspect-ratio, reduce padding for smaller cells
+              use flex centering so the date number is vertically and horizontally centered */
+          .cal-day { aspect-ratio: 1 / 1; background: rgba(255,255,255,0.02); border-radius:8px; padding:4px; color: #fff; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .cal-day.other-month { opacity:0.35; }
+    .cal-day .date-num { position:static; font-weight:700; font-size: clamp(14px, 2.4vw, 18px); }
+        .cal-day.has-event {
+            /* stronger visual highlight for days that have events */
+            box-shadow: inset 0 0 0 3px rgba(168,224,99,0.14), 0 6px 14px rgba(0,0,0,0.18);
+            background: linear-gradient(180deg, rgba(168,224,99,0.10), rgba(168,224,99,0.04));
+            border: 1px solid rgba(168,224,99,0.20);
+        }
+        /* highlight the current day */
+        .cal-day.today {
+            box-shadow: 0 0 0 3px rgba(255,215,64,0.16), inset 0 0 0 2px rgba(255,215,64,0.08);
+            background: linear-gradient(180deg, rgba(255,215,64,0.08), rgba(255,215,64,0.03));
+            border: 1px solid rgba(255,215,64,0.35);
+        }
+        /* if today also has events, combine styles to be more prominent */
+        .cal-day.has-event.today {
+            box-shadow: inset 0 0 0 3px rgba(168,224,99,0.14), 0 8px 20px rgba(0,0,0,0.22), 0 0 0 4px rgba(255,215,64,0.12);
+            background: linear-gradient(180deg, rgba(255,215,64,0.10), rgba(168,224,99,0.06));
+            border: 1px solid rgba(255,215,64,0.45);
+        }
+        .cal-day .event-dot { position:absolute; left:8px; bottom:8px; width:9px; height:9px; border-radius:50%; background:#a8e063; }
+    .events-list { margin-top:14px; color:#fff; }
+        .events-list h3 { margin:0 0 8px 0; font-size:18px; }
+        .event-item { padding:8px; background: rgba(255,255,255,0.03); border-radius:8px; margin-bottom:8px; }
+
+        /* responsive fallbacks: switch to fluid layout below certain widths */
+    @media (max-width:900px) { .calendar-wrap { width: calc(640px / 2); max-width: calc(640px / 2); } }
+    @media (max-width:700px) { .calendar-wrap { width: 100%; max-width: 100%; padding:10px; } .cal-nav { width: calc(120px / 2); } .cal-day { padding:4px; } }
+    </style>
+</head>
+<body class="bg-gradient">
+    <h1 class="page-title">kalendarz mojej kocicy i mnie</h1>
+    <div class="calendar-wrap container">
+        <div class="cal-header">
+            <div class="cal-title" id="calTitle">Kalendarz</div>
+            <div class="cal-nav">
+                <button id="prevBtn" aria-label="Poprzedni miesiÄ…c">â—€</button>
+                <button id="todayBtn" aria-label="DziĹ›">DziĹ›</button>
+                <button id="nextBtn" aria-label="NastÄ™pny miesiÄ…c">â–¶</button>
+            </div>
+        </div>
+
+        
+
+        <div class="multi-cal" aria-hidden="false">
+            <div class="month-block">
+                    <div class="mini-title" id="calTitlePrev"></div>
+                    <div class="cal-grid-weekdays">
+                        <div class="cal-weekday">Pn</div>
+                        <div class="cal-weekday">Wt</div>
+                        <div class="cal-weekday">Ĺšr</div>
+                        <div class="cal-weekday">Cz</div>
+                        <div class="cal-weekday">Pt</div>
+                        <div class="cal-weekday">So</div>
+                        <div class="cal-weekday">Nd</div>
+                    </div>
+                    <div id="calendarPrev" class="cal-grid" role="grid" aria-label="Kalendarz poprzedni"></div>
+            </div>
+            <div class="month-block">
+                <div class="mini-title" id="calTitleCurr"></div>
+                <div class="cal-grid-weekdays">
+                    <div class="cal-weekday">Pn</div>
+                    <div class="cal-weekday">Wt</div>
+                    <div class="cal-weekday">Ĺšr</div>
+                    <div class="cal-weekday">Cz</div>
+                    <div class="cal-weekday">Pt</div>
+                    <div class="cal-weekday">So</div>
+                    <div class="cal-weekday">Nd</div>
+                </div>
+                <div id="calendarCurr" class="cal-grid" role="grid" aria-label="Kalendarz bieĹĽÄ…cy"></div>
+            </div>
+            <div class="month-block">
+                <div class="mini-title" id="calTitleNext"></div>
+                <div class="cal-grid-weekdays">
+                    <div class="cal-weekday">Pn</div>
+                    <div class="cal-weekday">Wt</div>
+                    <div class="cal-weekday">Ĺšr</div>
+                    <div class="cal-weekday">Cz</div>
+                    <div class="cal-weekday">Pt</div>
+                    <div class="cal-weekday">So</div>
+                    <div class="cal-weekday">Nd</div>
+                </div>
+                <div id="calendarNext" class="cal-grid" role="grid" aria-label="Kalendarz nastÄ™pny"></div>
+            </div>
+        </div>
+
+        <div class="events-list" id="eventsList">
+            <h3>Wydarzenia</h3>
+            <div id="eventsContainer">Wybierz dzieĹ„, aby zobaczyÄ‡ wydarzenia.</div>
+        </div>
+    </div>
+
+    <script src="calendar.js"></script>
+</body>
+</html>

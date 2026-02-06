@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Photos</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root { --scroll-duration: 300s; }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* reduce top spacing so the top slider sits closer to the top of the page */
+            padding: 8px 20px;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            width: 90%;
+            margin: 20px auto;
+        }
+
+        .photo-cell {
+            aspect-ratio: 1;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            perspective: 1000px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .photo-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .photo-cell.flipped .photo-card {
+            transform: rotateY(180deg);
+        }
+
+        .photo-front, .photo-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+        }
+
+        .photo-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-back {
+            background: white;
+            transform: rotateY(180deg);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-sizing: border-box;
+            /* responsive caption text */
+            font-size: clamp(14px, 2.2vw + 0.1rem, 18px);
+        }
+
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            /* responsive back arrow */
+            font-size: clamp(18px, 4.5vw, 40px);
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.1);
+        }
+
+        .photo-cell.zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vh;
+            z-index: 1000;
+            transition: all 0.5s ease;
+        }
+
+        .photo-cell.zoomed .photo-card {
+            height: 100%;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .navigation-menu {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .menu-button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .menu-button:hover {
+            transform: scale(1.1);
+        }
+
+        .menu-content {
+            display: none;
+            position: absolute;
+            bottom: 60px;
+            right: 0;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            padding: 10px;
+            width: 150px;
+        }
+
+        .menu-content.active {
+            display: block;
+        }
+
+        .menu-content a {
+            display: block;
+            padding: 8px 10px;
+            text-decoration: none;
+            color: #333;
+            /* responsive menu items */
+            font-size: clamp(12px, 2.5vw, 16px);
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .menu-content a:hover {
+            background-color: #ffecf2;
+        }
+        /* === scrolling sliders === */
+        .scroll-sliders {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            /* reduce top margin so content is closer to the top */
+            margin: 8px 0 24px 0;
+        }
+
+        /* centered text block placed between the two scrolling sliders */
+        .center-text {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            /* minimal spacing so it sits between sliders but has no box */
+            padding: 6px 0;
+            box-sizing: border-box;
+            font-size: clamp(18px, 3.2vw, 28px);
+            color: #3a1a2b;
+            background: transparent; /* no box */
+            border-radius: 0;
+            backdrop-filter: none;
+            margin: 0 6px;
+        }
+
+        .scroll-slider {
+            --gap: 16px;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(0,0,0,0.02));
+            padding: 8px 0;
+        }
+
+        .slide-track {
+            display: flex;
+            gap: var(--gap);
+            align-items: center;
+            /* make the track twice as wide by repeating content; animation moves -50% */
+            width: max-content;
+            will-change: transform;
+        }
+
+        .slide-track img {
+            height: clamp(200px, 9vw, 140px);
+            border-radius: 10px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* animation: translate left by half (since content is duplicated) */
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+            /* two speed presets: top row (level-1) runs left->right, bottom row (level-2) runs right->left */
+            .scroll-slider.level-1 .slide-track { animation: scroll-left var(--scroll-duration) linear infinite reverse; }
+            .scroll-slider.level-2 .slide-track { animation: scroll-left var(--scroll-duration) linear infinite; }
+
+        /* Make both levels images a fixed taller height (300px) as requested */
+        .scroll-slider.level-1 .slide-track img { height: 300px; }
+        .scroll-slider.level-2 .slide-track img { height: 300px; }
+
+        /* logo button (fixed, responsive) */
+        .logo-link {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 2001;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: clamp(40px, 5.5vw, 64px);
+            height: clamp(40px, 5.5vw, 64px);
+            background: rgba(255,255,255,0.9);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .logo-link:hover { transform: scale(1.06); box-shadow: 0 6px 14px rgba(0,0,0,0.2); }
+        .logo-link svg { width: 100%; height: 100%; display: block; fill: #ff69b4; }
+        /* ensure mobile doesn't overlap other fixed controls (tweak if needed) */
+        @media (max-width: 480px) {
+            .logo-link { top: 8px; left: 8px; width: 44px; height: 44px; }
+        }
+        /* === calendar widget CSS (copied from calendar.html) === */
+    .calendar-wrap { width: 100%; max-width: 1000px; margin: 20px auto 13px; padding: 14px 14px 9px; background: rgba(0,0,0,0.22); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); max-height: 360px;}
+        /* reduce vertical size: smaller top/bottom margin and padding, lower max-height and allow scroll if needed */
+        .calendar-wrap { width: 100%; max-width: 1500px; margin: 12px auto 8px; padding: 8px 14px 6px; background: rgba(0,0,0,0.22); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); max-height: 3500px; overflow:auto;}
+        .cal-header { display:flex; align-items:center; justify-content:center; gap:4px; margin-bottom:8px; position:relative; }
+        .cal-nav { width: calc(140px / 2); display:flex; gap:6px; margin-left:6px; }
+        .cal-title { flex:0 0 auto; max-width: 60%; text-align:center; font-size: clamp(12px, 2.4vw, 14px); color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+        .cal-nav button { padding:4px 6px; font-size:12px; border-radius:6px; border:none; background:#ff69b4; color:#fff; cursor:pointer; }
+        .multi-cal { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+        .cal-grid-weekdays { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; margin-bottom:6px; }
+        .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+        .month-block { display:flex; flex-direction:column; align-items:stretch; }
+        .month-block { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding:10px; border-radius:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+        .mini-title { text-align:center; color:#fff; font-size:12px; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-bottom:4px; border-bottom: 1px dashed rgba(255,255,255,0.04); }
+        .month-block .cal-grid-weekdays { margin-top:8px; margin-bottom:6px; }
+        .cal-weekday { text-align:center; font-weight:700; color: rgba(255,255,255,0.85); padding:6px 4px; }
+        .cal-day { aspect-ratio: 1 / 1; background: rgba(255,255,255,0.02); border-radius:8px; padding:4px; color: #fff; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .cal-day.other-month { opacity:0.35; }
+        .cal-day .date-num { position:static; font-weight:700; font-size: clamp(14px, 2.4vw, 18px); }
+        .cal-day.has-event { box-shadow: inset 0 0 0 3px rgba(168,224,99,0.14), 0 6px 14px rgba(0,0,0,0.18); background: linear-gradient(180deg, rgba(168,224,99,0.10), rgba(168,224,99,0.04)); border: 1px solid rgba(168,224,99,0.20); }
+        .cal-day.today { box-shadow: 0 0 0 3px rgba(255,215,64,0.16), inset 0 0 0 2px rgba(255,215,64,0.08); background: linear-gradient(180deg, rgba(255,215,64,0.08), rgba(255,215,64,0.03)); border: 1px solid rgba(255,215,64,0.35); }
+        .cal-day.has-event.today { box-shadow: inset 0 0 0 3px rgba(168,224,99,0.14), 0 8px 20px rgba(0,0,0,0.22), 0 0 0 4px rgba(255,215,64,0.12); background: linear-gradient(180deg, rgba(255,215,64,0.10), rgba(168,224,99,0.06)); border: 1px solid rgba(255,215,64,0.45); }
+        .cal-day .event-dot { position:absolute; left:8px; bottom:8px; width:9px; height:9px; border-radius:50%; background:#a8e063; }
+        .events-list { margin-top:14px; color:#fff; }
+        .events-list h3 { margin:0 0 8px 0; font-size:18px; }
+        .event-item { padding:8px; background: rgba(255,255,255,0.03); border-radius:8px; margin-bottom:8px; }
+        @media (max-width:900px) { .calendar-wrap { width: calc(640px / 2); max-width: calc(640px / 2); } }
+        @media (max-width:700px) { .calendar-wrap { width: 100%; max-width: 100%; padding:10px; } .cal-nav { width: calc(120px / 2); } .cal-day { padding:4px; } }
+
+    </style>
+</head>
+<body class="bg-gradient">
+    <div class="overlay"></div>
+
+    <div class="container">
+        <!-- Containers: sliders will be built dynamically -->
+        <div class="scroll-sliders" aria-hidden="false"></div>
+    </div>
+    <!-- Inserted calendar (same as on calendar.html) -->
+    <h2 class="page-title" style="margin-top:18px;color:#fff;text-align:center;">kalendarz mojej kocicy i mnie</h2>
+    <div class="calendar-wrap container" aria-hidden="false">
+        <div class="cal-header">
+            <div class="cal-title" id="calTitle">Kalendarz</div>
+            <div class="cal-nav">
+                <button id="prevBtn" aria-label="Poprzedni miesiÄ…c">â—€</button>
+                <button id="todayBtn" aria-label="DziĹ›">DziĹ›</button>
+                <button id="nextBtn" aria-label="NastÄ™pny miesiÄ…c">â–¶</button>
+            </div>
+        </div>
+
+        <div class="multi-cal">
+            <div class="month-block">
+                <div class="mini-title" id="calTitlePrev"></div>
+                <div class="cal-grid-weekdays">
+                    <div class="cal-weekday">Pn</div>
+                    <div class="cal-weekday">Wt</div>
+                    <div class="cal-weekday">Ĺšr</div>
+                    <div class="cal-weekday">Cz</div>
+                    <div class="cal-weekday">Pt</div>
+                    <div class="cal-weekday">So</div>
+                    <div class="cal-weekday">Nd</div>
+                </div>
+                <div id="calendarPrev" class="cal-grid" role="grid" aria-label="Kalendarz poprzedni"></div>
+            </div>
+            <div class="month-block">
+                <div class="mini-title" id="calTitleCurr"></div>
+                <div class="cal-grid-weekdays">
+                    <div class="cal-weekday">Pn</div>
+                    <div class="cal-weekday">Wt</div>
+                    <div class="cal-weekday">Ĺšr</div>
+                    <div class="cal-weekday">Cz</div>
+                    <div class="cal-weekday">Pt</div>
+                    <div class="cal-weekday">So</div>
+                    <div class="cal-weekday">Nd</div>
+                </div>
+                <div id="calendarCurr" class="cal-grid" role="grid" aria-label="Kalendarz bieĹĽÄ…cy"></div>
+            </div>
+            <div class="month-block">
+                <div class="mini-title" id="calTitleNext"></div>
+                <div class="cal-grid-weekdays">
+                    <div class="cal-weekday">Pn</div>
+                    <div class="cal-weekday">Wt</div>
+                    <div class="cal-weekday">Ĺšr</div>
+                    <div class="cal-weekday">Cz</div>
+                    <div class="cal-weekday">Pt</div>
+                    <div class="cal-weekday">So</div>
+                    <div class="cal-weekday">Nd</div>
+                </div>
+                <div id="calendarNext" class="cal-grid" role="grid" aria-label="Kalendarz nastÄ™pny"></div>
+            </div>
+        </div>
+
+        <div class="events-list" id="eventsList">
+            <h3>Wydarzenia</h3>
+            <div id="eventsContainer">Wybierz dzieĹ„, aby zobaczyÄ‡ wydarzenia.</div>
+        </div>
+    </div>
+
+    <!-- Thumbnails block moved below the calendar -->
+    <div class="photo-thumbs-block" style="max-width:920px;margin:14px auto;padding:8px;">
+        <h2 style="text-align:center;color:#fff;margin-bottom:8px;">Wybrane zdjÄ™cia</h2>
+        <div class="photo-grid"></div>
+    </div>
+
+    <script src="calendar.js"></script>
+
+    <a href="nextpage.html" class="back-button">â¬…ď¸Ź</a>
+
+    <div class="navigation-menu">
+        <button class="menu-button">đź“‘</button>
+        <div class="menu-content">
+            <a href="index.html">Home</a>
+            <a href="list_z_piosenkÄ….html">List</a>
+            <a href="nextpage.html">Love you</a>
+            <a href="zdjecia.html">ZdjÄ™cia</a>
+            <a href="timetable.html">Timetable</a>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIG ==========
+        // Image list is auto-populated from the images/ folder here (files in images/shared/ are excluded)
+        const images = [
+            '20250316_163005.jpg','20250316_170955.jpg','20250316_175440.jpg','20250316_194928.jpg',
+            '20250320_122741.jpg','20250321_133705.jpg','20250328_143549.jpg','20250331_221048.jpg',
+            '20250403_190337.jpg','20250421_180146.jpg','20250428_211938.jpg','20250429_114250.jpg',
+            '20250429_140832.jpg','20250504_084002.jpg','20250506_122236.jpg','20250923_043326.jpg',
+            '20250923_043933.jpg','20250924_155616(0).jpg','20250925_105042.jpg','20250925_110655.jpg',
+            '20250925_115102.jpg','20250925_124749.jpg','20250925_125240.jpg','20250925_131402.jpg',
+            '20250925_135012.jpg','20250925_150935.jpg','20250925_152745.jpg','20250925_152803.jpg',
+            '20250925_221752.jpg','20250925_221827.jpg','20250926_120744.jpg','20250926_123150.jpg',
+            '20250926_155046.jpg','20250926_160124.jpg','20250926_161651.jpg','20250926_202947.jpg',
+            '20250927_102647.jpg','20250927_103942.jpg','20250927_121819(0).jpg','20250928_122129.jpg',
+            '20250928_122134.jpg','20250929_151613.jpg','20250929_152154.jpg','20250929_160126(0).jpg',
+            '20250929_160224.jpg','20250929_160725.jpg','20250929_160844.jpg','20250929_163551.jpg',
+            '20250930_065450.jpg','20251002_073010.jpg','20251002_073016.jpg','20251010_221705.jpg',
+            '20251017_072439.jpg','20251017_113437.jpg','20251020_222933.jpg','20251021_140832.jpg',
+            '20251025_194139.jpg','20251025_194157.jpg','20251025_210305.jpg','20251029_232232.jpg',
+            '20251102_133432.jpg','20251102_133436.jpg','oliwia1.jpg','oliwia2.jpg','oliwia3.jpg',
+            'oliwia4.jpg','oliwia5.jpg','oliwia6.jpg','oliwia7.jpg','oliwia8.jpeg','oliwia9.jpg',
+            'photo1.jpg','received_1116532277209669.jpeg','received_2271314106603902.jpeg',
+            'received_4101841870071083.jpeg','Screenshot_20251010_125237_Revolut.jpg'
+        ];
+
+        // Optional captions keyed by filename
+        const captions = {
+            'oliwia1.jpg': 'PamiÄ™tasz wyjĹ›cie na juwenalia rok temu a wtedy to byĹ‚o takie niewinne spotkanie ;)',
+            'oliwia2.jpg': 'Trzymam caĹ‚y czas zdjÄ™cia jak zabieraĹ‚aĹ› mi telefon',
+            'oliwia3.jpg': 'Na zdjÄ™ciu jest najpiÄ™kniejszy kwiat caĹ‚ego ogrodu w Powsinie skacze po kamieniach',
+            'oliwia4.jpg': 'Moje ulubione zdjÄ™cie z pĂłl jak mi wpisaĹ‚aĹ› numer telefonu do kontaktĂłw...',
+            'oliwia5.jpg': 'Wszystkie chwile na polach po zajÄ™ciach to dla mnie odpoczynek...',
+            'oliwia6.jpg': 'Randomowe zdjÄ™cie z mojÄ… babygirl',
+            'oliwia7.jpg': 'WyjĹ›cie do stodoĹ‚y przed ktĂłrym rozmawiaĹ‚em z ekranem w autobusie...',
+            'oliwia8.jpeg': 'Tak... Noo A wiÄ™c jak to jest ĹĽe najĹ‚adniejsza dziewczyna...',
+            'oliwia9.jpg': 'I oczywiĹ›cie ostatnie wyjĹ›cie na spacer z twoim pieskiem Plasterkiem...',
+            'nazwa.jpg': 'To bÄ™dÄ… twoje najlepsze 21 urodziny w ĹĽyciu đźŽ†đźŽ‰'
+        };
+
+    // number of thumbnails in the main grid
+    const GRID_COUNT = 10;
+
+    // default centered text content (change as needed)
+    const CENTER_TEXT = 'Nasze wspĂłlne chwile, ktĂłre zostanÄ… z nami na zawsze';
+
+        // ========== HELPERS ==========
+        function shuffleArray(a) {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function buildSliderTrack(list) {
+            // create fragment with images duplicated once for seamless loop
+            const track = document.createElement('div');
+            track.className = 'slide-track';
+            list.forEach(fn => {
+                const img = document.createElement('img');
+                img.src = 'images/' + fn;
+                img.alt = '';
+                track.appendChild(img);
+            });
+            // duplicate
+            list.forEach(fn => {
+                const img = document.createElement('img');
+                img.src = 'images/' + fn;
+                img.alt = '';
+                track.appendChild(img);
+            });
+            return track;
+        }
+
+        function buildPhotoCell(filename) {
+            const cell = document.createElement('div');
+            cell.className = 'photo-cell';
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            const front = document.createElement('div');
+            front.className = 'photo-front';
+            const img = document.createElement('img');
+            img.src = 'images/' + filename;
+            img.alt = filename;
+            front.appendChild(img);
+            const back = document.createElement('div');
+            back.className = 'photo-back';
+            back.textContent = captions[filename] || '';
+            card.appendChild(front);
+            card.appendChild(back);
+            cell.appendChild(card);
+            return cell;
+        }
+
+        // ========== BUILD UI ==========
+        function populate() {
+            const slidersContainer = document.querySelector('.scroll-sliders');
+            const grid = document.querySelector('.photo-grid');
+            slidersContainer.innerHTML = '';
+            grid.innerHTML = '';
+
+            // create 3 slider levels with different random orders
+            const levelSelections = [];
+            // build two slider levels instead of three
+            for (let i = 0; i < 2; i++) {
+                const copy = shuffleArray(images.slice());
+                // keep at least 6 images for smooth feeling; if pool smaller, reuse as needed
+                levelSelections.push(copy);
+            }
+
+            levelSelections.forEach((list, idx) => {
+                const level = document.createElement('div');
+                level.className = 'scroll-slider level-' + (idx + 1);
+                level.setAttribute('aria-label', 'Scrolling photos level ' + (idx + 1));
+                const track = buildSliderTrack(list);
+                level.appendChild(track);
+                slidersContainer.appendChild(level);
+
+                // after the first slider, insert a centered text block
+                if (idx === 0) {
+                    const center = document.createElement('div');
+                    center.className = 'center-text';
+                    center.innerHTML = CENTER_TEXT;
+                    slidersContainer.appendChild(center);
+                }
+            });
+
+            // fill grid with unique random images (repeat if not enough)
+            const pool = shuffleArray(images.slice());
+            for (let i = 0; i < GRID_COUNT; i++) {
+                if (pool.length === 0) pool.push(...shuffleArray(images.slice()));
+                const fn = pool.pop();
+                grid.appendChild(buildPhotoCell(fn));
+            }
+
+            initPhotoCellHandlers();
+        }
+
+        // ========== INTERACTIONS (zoom/flip/menu) ==========
+        function initPhotoCellHandlers() {
+            document.querySelectorAll('.photo-cell').forEach(cell => {
+                let timer;
+                // remove previous listeners by cloning if needed (safe approach)
+                const newCell = cell.cloneNode(true);
+                cell.parentNode.replaceChild(newCell, cell);
+            });
+
+            document.querySelectorAll('.photo-cell').forEach(cell => {
+                let timer;
+                cell.addEventListener('mouseenter', () => {
+                    timer = setTimeout(() => {
+                        cell.classList.add('zoomed');
+                        document.querySelector('.overlay').classList.add('active');
+                    }, 2000);
+                });
+                cell.addEventListener('mouseleave', () => {
+                    clearTimeout(timer);
+                });
+                cell.addEventListener('click', (e) => {
+                    if (cell.classList.contains('zoomed')) {
+                        cell.classList.remove('zoomed');
+                        document.querySelector('.overlay').classList.remove('active');
+                    } else {
+                        cell.classList.toggle('flipped');
+                    }
+                });
+            });
+
+            const overlay = document.querySelector('.overlay');
+            overlay.addEventListener('click', () => {
+                const zoomed = document.querySelector('.photo-cell.zoomed');
+                if (zoomed) zoomed.classList.remove('zoomed');
+                overlay.classList.remove('active');
+            });
+
+            // menu button already exists; reattach safe
+            const menuButton = document.querySelector('.menu-button');
+            const menuContent = document.querySelector('.menu-content');
+            menuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuContent.classList.toggle('active');
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.navigation-menu')) {
+                    menuContent.classList.remove('active');
+                }
+            });
+        }
+
+        // initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            populate();
+        });
+
+        // Optional: expose populate() for manual refresh (e.g., after you add files and update images[]).
+        window.refreshZdjecia = populate;
+    </script>
+</body>
+</html>

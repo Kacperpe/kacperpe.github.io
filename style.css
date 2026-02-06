@@ -1,0 +1,98 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: "Bradley Hand", cursive;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 100vh;
+    /* removed large top padding so page content (titles) sit at top */
+    padding-top: 0;
+}
+
+/* Background helper classes (use per-page by adding class to <body>) */
+body.bg-image {
+    /* main photo used as page background */
+    background-image: url('images/shared/photo.avif');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    /* keep the background fixed while scrolling */
+    background-attachment: fixed;
+}
+
+body.bg-gradient {
+    /* green -> pink gradient */
+    background: linear-gradient(135deg, #a8e063 0%, #f78da7 100%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* Optional: image + translucent gradient overlay */
+body.bg-image.overlay {
+    background-image:
+        linear-gradient(rgba(168,224,99,0.35), rgba(247,138,167,0.35)),
+        url('images/shared/photo.avif');
+}
+h1 {
+    text-align: center;
+    color: #ffffff;
+    /* Fluid / responsive typography: scales between 32px and 100px depending on viewport */
+    font-size: clamp(32px, 6vw + 1rem, 100px);
+    margin-top: 0;
+}
+.password-box {
+    margin-top: 20px;
+    text-align: center;
+}
+input[type="text"] {
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 20px;
+    text-align: center;
+    width: 250px;
+    font-family: "Bradley Hand", cursive;
+    background: transparent;
+    color: white;
+    -webkit-appearance: none;
+    appearance: none;
+}
+input[type="text"]::placeholder {
+    text-align: center;
+    font-family: "Bradley Hand", cursive;
+    color: white;
+}
+.error-message {
+    color: yellow;
+    margin-top: 10px;
+    display: none;
+    font-size: 20px;
+}
+.rose-image {
+    max-width: 100%;
+    height: auto;
+    margin: 10px;
+    object-fit: contain;
+    width: 90vw;
+    border-radius: 15px;
+}
+@media (max-width: 768px) {
+    h1 {
+        font-size: 40px;
+        margin-top: 0;
+    }
+    input[type="text"] {
+        width: 80vw;
+        font-size: 16px;
+    }
+    .error-message {
+        font-size: 16px;
+    }
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Web Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-image">
+    <h1>âť¤ď¸Ź To the Love of My Life âť¤ď¸Ź</h1>
+
+    <div class="password-box">
+        <input type="text" id="nameInput" placeholder="Podaj imiÄ™">
+        <p id="errorMsg" class="error-message">Only My cupcake can see that</p>
+    </div>
+
+    <script>
+        // Trim input and compare case-insensitively so entering "Oliwia", "oliwia", or
+        // "  Oliwia  " all work.
+        document.getElementById('nameInput').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                const name = this.value.trim();
+                const errorEl = document.getElementById('errorMsg');
+                // hide previous error when user retries
+                errorEl.style.display = 'none';
+
+                if (name.toLowerCase() === 'oliwia') {
+                    // navigate to the list page
+                    window.location.href = 'list_z_piosenkÄ….html';
+                } else {
+                    // show error
+                    errorEl.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Message</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: "Bradley Hand", cursive;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #ffffff;
+            /* fluid heading that adapts to viewport width */
+            font-size: clamp(28px, 6.5vw + 1rem, 60px);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .rounded-box {
+            background: linear-gradient(45deg, rgba(141, 9, 9, 0.9), rgba(218, 218, 218, 0.9));
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 600px;
+            text-align: left; /* letter-like layout */
+            /* fluid body text for the box */
+            font-size: clamp(16px, 2.5vw + 0.25rem, 24px);
+            color: #333;
+        }
+
+        /* Markdown-style helpers inside the letter box */
+        .md-letter h2 {
+            margin: 0 0 8px 0;
+            font-size: clamp(20px, 4.5vw, 28px);
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .md-letter p {
+            margin: 0 0 12px 0;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        .md-letter strong {
+            font-weight: 800; /* bolder for emphasis like MD **bold** */
+            color: #ffe9e9;
+        }
+
+        .md-letter em {
+            font-style: italic; /* for _italic_ */
+            color: #ffdfe0;
+        }
+
+        .md-letter .signature {
+            margin-top: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        audio {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .heart-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            /* large responsive heart symbol */
+            font-size: clamp(40px, 12vw, 100px);
+            color: white;
+            cursor: pointer;
+            font-family: 'Bradley Hand', cursive;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .heart-button:hover {
+            transform: scale(1.1);
+        }
+
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            /* responsive back arrow size */
+            font-size: clamp(18px, 4.5vw, 40px);
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-image">
+    <div class="container">
+<h1>❤️ For My Oliwia ❤️</h1>
+<div class="rounded-box">
+    <p>Fur Oliwka</p>
+    Cześć Oliwia, tu Kacper. Bardzo Cię kocham i uwielbiam spędzać z Tobą czas oraz być z Tobą całkowicie – czuję się wtedy spełniony, gdy Cię widzę i kiedy się uśmiechasz. Szczególnie Twój niewinny uśmiech sprawia, że robisz coś, co zupełnie mnie zaskakuje, a to właśnie w Tobie uwielbiam. Jesteś moim cupcake, babygirl i moją Oliwką.
+</div>
+        <audio controls>
+            <source src="audio/Frank Ocean - American Wedding (Lyrics).mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    <a href="nextpage.html" id="heartButton" class="heart-button" aria-label="Go to next page">âť¤ď¸Ź</a>
+    </div>
+    <a href="index.html" class="back-button">â¬…ď¸Ź</a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.querySelector('audio');
+            
+            // Try to play audio when page loads
+            try {
+                audio.play().catch(function(error) {
+                    console.log("Audio autoplay failed:", error);
+                });
+            } catch(e) {
+                console.log("Audio playback error:", e);
+            }
+
+            // Ensure the heart link always navigates (some browsers or scripts may block the default)
+            const heart = document.getElementById('heartButton');
+            if (heart) {
+                heart.addEventListener('click', function(evt) {
+                    // force navigation in case default action is prevented
+                    evt.preventDefault();
+                    window.location.href = 'nextpage.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
