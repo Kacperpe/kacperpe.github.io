@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalendarz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-calendar">
+    <main class="page-shell">
+        <section class="hero-card glass">
+            <p class="subtitle">Wspolne daty</p>
+            <h1 class="page-title">Nasz kalendarz</h1>
+            <p class="subtitle">Kliknij dzien, aby zobaczyc wydarzenia z timetable.</p>
+
+            <div class="toolbar" style="justify-content: center;">
+                <a class="btn btn-secondary" href="timetable.html">Edytuj wydarzenia</a>
+                <a class="btn btn-subtle" href="zdjecia.html">Zdjecia</a>
+            </div>
+
+            <section class="calendar-wrap surface">
+                <div class="cal-header">
+                    <div class="cal-title" id="calTitle">Kalendarz</div>
+                    <div class="cal-nav">
+                        <button id="prevBtn" aria-label="Poprzedni miesiac">&lt;</button>
+                        <button id="todayBtn" aria-label="Dzis">Dzis</button>
+                        <button id="nextBtn" aria-label="Nastepny miesiac">&gt;</button>
+                    </div>
+                </div>
+
+                <div class="multi-cal">
+                    <div class="month-block">
+                        <div class="mini-title" id="calTitlePrev"></div>
+                        <div class="cal-grid-weekdays">
+                            <div class="cal-weekday">Pn</div>
+                            <div class="cal-weekday">Wt</div>
+                            <div class="cal-weekday">Sr</div>
+                            <div class="cal-weekday">Cz</div>
+                            <div class="cal-weekday">Pt</div>
+                            <div class="cal-weekday">So</div>
+                            <div class="cal-weekday">Nd</div>
+                        </div>
+                        <div id="calendarPrev" class="cal-grid" role="grid" aria-label="Poprzedni miesiac"></div>
+                    </div>
+
+                    <div class="month-block">
+                        <div class="mini-title" id="calTitleCurr"></div>
+                        <div class="cal-grid-weekdays">
+                            <div class="cal-weekday">Pn</div>
+                            <div class="cal-weekday">Wt</div>
+                            <div class="cal-weekday">Sr</div>
+                            <div class="cal-weekday">Cz</div>
+                            <div class="cal-weekday">Pt</div>
+                            <div class="cal-weekday">So</div>
+                            <div class="cal-weekday">Nd</div>
+                        </div>
+                        <div id="calendarCurr" class="cal-grid" role="grid" aria-label="Aktualny miesiac"></div>
+                    </div>
+
+                    <div class="month-block">
+                        <div class="mini-title" id="calTitleNext"></div>
+                        <div class="cal-grid-weekdays">
+                            <div class="cal-weekday">Pn</div>
+                            <div class="cal-weekday">Wt</div>
+                            <div class="cal-weekday">Sr</div>
+                            <div class="cal-weekday">Cz</div>
+                            <div class="cal-weekday">Pt</div>
+                            <div class="cal-weekday">So</div>
+                            <div class="cal-weekday">Nd</div>
+                        </div>
+                        <div id="calendarNext" class="cal-grid" role="grid" aria-label="Nastepny miesiac"></div>
+                    </div>
+                </div>
+
+                <div class="events-list" id="eventsList">
+                    <h3>Wydarzenia</h3>
+                    <div id="eventsContainer">Wybierz dzien z kalendarza.</div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <a class="btn btn-subtle back-link" href="timetable.html">Wstecz</a>
+
+    <div class="navigation-menu">
+        <button class="menu-button" aria-label="Otworz menu" aria-expanded="false">Menu</button>
+        <div class="menu-content">
+            <a href="index.html">Home</a>
+            <a href="list_z_piosenk%C4%85.html">List</a>
+            <a href="nextpage.html">Love</a>
+            <a href="zdjecia.html">Zdjecia</a>
+            <a href="timetable.html">Timetable</a>
+            <a href="calendar.html">Kalendarz</a>
+        </div>
+    </div>
+
+    <script src="shared-nav.js"></script>
+    <script src="calendar.js"></script>
+</body>
+</html>

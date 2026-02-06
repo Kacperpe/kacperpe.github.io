@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-timetable">
+    <main class="page-shell">
+        <section class="hero-card glass">
+            <p class="subtitle">Wspolne wyjscia i miejsca</p>
+            <h1 class="page-title">Timetable</h1>
+            <p class="subtitle">Dodawaj wydarzenia, a potem zobacz je w kalendarzu.</p>
+
+            <div class="toolbar" style="justify-content: center;">
+                <a class="btn btn-secondary" href="calendar.html">Otworz kalendarz</a>
+                <a class="btn btn-subtle" href="zdjecia.html">Zdjecia</a>
+            </div>
+
+            <section class="table-wrap surface">
+                <form id="eventForm">
+                    <input id="date" type="date" required>
+                    <input id="title" type="text" placeholder="Tytul wydarzenia" required>
+                    <input id="location" type="text" placeholder="Miejsce">
+                    <input id="tag" type="text" placeholder="Tag, np. spacer">
+                    <textarea id="notes" placeholder="Notatki"></textarea>
+                    <div class="controls">
+                        <button id="addBtn" class="btn btn-primary" type="submit">Dodaj</button>
+                        <button id="clearBtn" class="btn btn-subtle" type="button">Wyczysc wszystko</button>
+                    </div>
+                </form>
+
+                <table id="eventsTable" aria-live="polite">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tytul</th>
+                            <th>Miejsce</th>
+                            <th>Tag</th>
+                            <th>Notatki</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </section>
+    </main>
+
+    <a class="btn btn-subtle back-link" href="zdjecia.html">Wstecz</a>
+
+    <div class="navigation-menu">
+        <button class="menu-button" aria-label="Otworz menu" aria-expanded="false">Menu</button>
+        <div class="menu-content">
+            <a href="index.html">Home</a>
+            <a href="list_z_piosenk%C4%85.html">List</a>
+            <a href="nextpage.html">Love</a>
+            <a href="zdjecia.html">Zdjecia</a>
+            <a href="timetable.html">Timetable</a>
+            <a href="calendar.html">Kalendarz</a>
+        </div>
+    </div>
+
+    <script src="shared-nav.js"></script>
+    <script>
+        (function () {
+            const STORAGE_KEY = "timetableEvents_v1";
+            const LEGACY_KEY = "timetableEvents_v2";
+
+            function loadEvents() {
+                try {
+                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+                } catch (error) {
+                    return [];
+                }
+            }
+
+            function saveEvents(list) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+            }
+
+            function migrateLegacyIfNeeded() {
+                const hasCurrent = localStorage.getItem(STORAGE_KEY);
+                const legacy = localStorage.getItem(LEGACY_KEY);
+                if (!hasCurrent && legacy) {
+                    localStorage.setItem(STORAGE_KEY, legacy);
+                }
+            }
+
+            function escapeHtml(value) {
+                if (!value) return "";
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;");
+            }
+
+            function sortByDate(items) {
+                return items.slice().sort(function (a, b) {
+                    if (a.date < b.date) return -1;
+                    if (a.date > b.date) return 1;
+                    return 0;
+                });
+            }
+
+            function render() {
+                const tbody = document.querySelector("#eventsTable tbody");
+                const events = sortByDate(loadEvents());
+                tbody.innerHTML = "";
+
+                if (events.length === 0) {
+                    const row = document.createElement("tr");
+                    row.innerHTML = '<td colspan="6">Brak wydarzen. Dodaj pierwsze wyzej.</td>';
+                    tbody.appendChild(row);
+                    return;
+                }
+
+                for (const eventItem of events) {
+                    const row = document.createElement("tr");
+                    row.innerHTML = [
+                        "<td>" + escapeHtml(eventItem.date) + "</td>",
+                        "<td>" + escapeHtml(eventItem.title) + "</td>",
+                        "<td>" + escapeHtml(eventItem.location) + "</td>",
+                        "<td>" + escapeHtml(eventItem.tag) + "</td>",
+                        "<td>" + escapeHtml(eventItem.notes) + "</td>",
+                        '<td class="actions">',
+                        '<button class="btn btn-subtle" data-action="edit" data-id="' + eventItem.id + '" type="button">Edytuj</button>',
+                        '<button class="btn btn-subtle" data-action="delete" data-id="' + eventItem.id + '" type="button">Usun</button>',
+                        "</td>"
+                    ].join("");
+                    tbody.appendChild(row);
+                }
+            }
+
+            function addEvent(event) {
+                event.preventDefault();
+                const date = document.getElementById("date").value;
+                const title = document.getElementById("title").value.trim();
+                const location = document.getElementById("location").value.trim();
+                const tag = document.getElementById("tag").value.trim();
+                const notes = document.getElementById("notes").value.trim();
+
+                if (!date || !title) {
+                    alert("Podaj date i tytul wydarzenia.");
+                    return;
+                }
+
+                const list = loadEvents();
+                list.push({
+                    id: String(Date.now()),
+                    date: date,
+                    title: title,
+                    location: location,
+                    tag: tag,
+                    notes: notes
+                });
+                saveEvents(list);
+                document.getElementById("eventForm").reset();
+                render();
+            }
+
+            function fillFormFromEvent(item) {
+                document.getElementById("date").value = item.date;
+                document.getElementById("title").value = item.title;
+                document.getElementById("location").value = item.location || "";
+                document.getElementById("tag").value = item.tag || "";
+                document.getElementById("notes").value = item.notes || "";
+            }
+
+            function handleTableClick(event) {
+                const button = event.target.closest("button");
+                if (!button) return;
+
+                const action = button.getAttribute("data-action");
+                const id = button.getAttribute("data-id");
+                if (!action || !id) return;
+
+                if (action === "delete") {
+                    if (!confirm("Usun to wydarzenie?")) return;
+                    const list = loadEvents().filter(function (item) {
+                        return item.id !== id;
+                    });
+                    saveEvents(list);
+                    render();
+                    return;
+                }
+
+                if (action === "edit") {
+                    const list = loadEvents();
+                    const item = list.find(function (entry) {
+                        return entry.id === id;
+                    });
+                    if (!item) return;
+
+                    fillFormFromEvent(item);
+                    const filteredList = list.filter(function (entry) {
+                        return entry.id !== id;
+                    });
+                    saveEvents(filteredList);
+                    render();
+                }
+            }
+
+            function clearAll() {
+                if (!confirm("Usunac wszystkie wydarzenia?")) return;
+                localStorage.removeItem(STORAGE_KEY);
+                render();
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                migrateLegacyIfNeeded();
+                render();
+                document.getElementById("eventForm").addEventListener("submit", addEvent);
+                document.getElementById("eventsTable").addEventListener("click", handleTableClick);
+                document.getElementById("clearBtn").addEventListener("click", clearAll);
+            });
+        })();
+    </script>
+</body>
+</html>
